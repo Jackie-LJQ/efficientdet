@@ -45,6 +45,8 @@ from timm.utils import *
 from timm.optim import create_optimizer
 from timm.scheduler import create_scheduler
 from adv_train import adv_train_epoch
+from utils import get_clip_parameters
+
 
 torch.backends.cudnn.benchmark = True
 
@@ -224,14 +226,6 @@ def _parse_args():
     return args, args_text
 
 
-def get_clip_parameters(model, exclude_head=False):
-    if exclude_head:
-        # FIXME this a bit of a quick and dirty hack to skip classifier head params
-        return [p for n, p in model.named_parameters() if 'predict' not in n]
-    else:
-        return model.parameters()
-
-
 def main():
     setup_default_logging()
     args, args_text = _parse_args()
@@ -282,10 +276,23 @@ def main():
 
     random_seed(args.seed, args.rank)
 
+    if args.train_type == 'normal':
+        _train_epoch = train_epoch
+        bench_task = 'train'
+        if args.local_rank==0:
+            logging.info('Using normal training.')
+    elif args.train_type == 'advtrain':
+        _train_epoch = adv_train_epoch
+        bench_task = 'advtrain'
+        if args.local_rank==0:
+            logging.info('Using adversarial training.')
+    else:
+        assert False, 'Undefined train type %s' % args.train_type
+        
     with set_layer_config(scriptable=args.torchscript):
         model = create_model(
             args.model,
-            bench_task='train',
+            bench_task=bench_task,
             num_classes=args.num_classes,
             pretrained=args.pretrained,
             pretrained_backbone=args.pretrained_backbone,
@@ -393,17 +400,7 @@ def main():
         logging.warning(
             f'Model {model_config.num_classes} has more classes than dataset {loader_train.dataset.parser.max_label}.')
 
-    if args.train_type == 'normal':
-        _train_epoch = train_epoch
-        if args.local_rank==0:
-            logging.info('Using normal training.')
-    elif args.train_type == 'advtrain':
-        _train_epoch = adv_train_epoch
-        if args.local_rank==0:
-            logging.info('Using adversarial training.')
-    else:
-        assert False, 'Undefined train type %s' % args.train_type
-    
+        
                 
     eval_metric = args.eval_metric
     best_metric = None
@@ -559,7 +556,6 @@ def train_epoch(
         data_time_m.update(time.time() - end)
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
-
         with amp_autocast():
             output = model(input, target)
         loss = output['loss']

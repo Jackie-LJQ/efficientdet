@@ -3,14 +3,10 @@ from timm.utils import *
 from contextlib import suppress
 from attacks import AttackerBuilder
 import time
+from utils import get_clip_parameters
+import torch
+import logging
 
-
-def get_clip_parameters(model, exclude_head=False):
-    if exclude_head:
-        # FIXME this a bit of a quick and dirty hack to skip classifier head params
-        return [p for n, p in model.named_parameters() if 'predict' not in n]
-    else:
-        return model.parameters()
     
 def adv_train_epoch(
         epoch, model, loader, optimizer, args, 
@@ -28,25 +24,26 @@ def adv_train_epoch(
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
     for batch_idx, (input, target) in enumerate(loader):
-        input.sample_type = 'clean' # origin sample in clean
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
         # generate adversarial images:
         model.eval()
-        img_adv = attacker.attack(model, input, target)
-        img_adv.clean = False
+        img_adv, adv_type = attacker.attack(model, input, target)
+                    
         model.train()
-               
-        
+                       
         with amp_autocast():
-            clean_output = model(input, target)
-            adv_output = model(img_adv.detach(), target)
-        clean_total_loss = clean_output['loss']
-        adv_total_loss = adv_output['loss']
-
-        loss = adv_total_loss + clean_total_loss
+            if adv_type == 'box':
+                cat_input = torch.cat([input, torch.zeros_like(input), img_adv], dim=0)
+                output = model(cat_input, target)
+                loss = output[0]["loss"] + output[2]["loss"]
+            else:
+                cat_input = torch.cat([input, img_adv, torch.zeros_like(input)], dim=0)
+                output = model(cat_input, target)
+                loss = output[0]["loss"] + output[1]["loss"]
+                
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
 

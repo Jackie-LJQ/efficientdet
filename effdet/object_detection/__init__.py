@@ -20,4 +20,4 @@ from .box_list import BoxList
 from .matcher import Match
 from .region_similarity_calculator import IouSimilarity
 from .target_assigner import TargetAssigner
-from .auxiliary_bn import auxiliary_bn
+from .triple_bn import Triple_BN

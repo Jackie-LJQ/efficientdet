@@ -9,6 +9,7 @@ import torch.nn as nn
 
 from .anchors import Anchors, AnchorLabeler, generate_detections
 from .loss import DetectionLoss
+import numpy as np
 
 # try:
 #     torch.div(torch.ones(1), torch.ones(1), rounding_mode='floor')
@@ -164,3 +165,48 @@ def unwrap_bench(model):
         return unwrap_bench(model.model)
     else:
         return model
+
+
+class DetBenchAdvTrain(nn.Module):
+    def __init__(self, model, create_labeler=True):
+        super(DetBenchAdvTrain, self).__init__()
+        self.model = model
+        self.config = model.config  # FIXME remove this when we can use @property (torchscript limitation)
+        self.num_levels = model.config.num_levels
+        self.num_classes = model.config.num_classes
+        self.anchors = Anchors.from_config(model.config)
+        self.max_detection_points = model.config.max_detection_points
+        self.max_det_per_image = model.config.max_det_per_image
+        self.soft_nms = model.config.soft_nms
+        self.anchor_labeler = None
+        if create_labeler:
+            self.anchor_labeler = AnchorLabeler(self.anchors, self.num_classes, match_threshold=0.5)
+        self.loss_fn = DetectionLoss(model.config)
+
+    def forward(self, x, target: Dict[str, torch.Tensor]):
+        # x = [clean, cls_adv, box_adv]
+        if self.anchor_labeler is None:
+            # target should contain pre-computed anchor labels if labeler not present in bench
+            assert 'label_num_positives' in target
+            cls_targets = [target[f'label_cls_{l}'] for l in range(self.num_levels)]
+            box_targets = [target[f'label_bbox_{l}'] for l in range(self.num_levels)]
+            num_positives = target['label_num_positives']
+        else:
+            cls_targets, box_targets, num_positives = self.anchor_labeler.batch_label_anchors(
+                target['bbox'], target['cls'])
+        
+        cat_class_out, cat_box_out = self.model(x)
+        bsize = x.shape[0] // 3
+        class_out, box_out = [[] for _ in range(3)], [[] for _ in range(3)]
+        for tmp_cat_cls, tmp_cat_box in zip(cat_class_out, cat_box_out):
+            split_cls_out = torch.split(tmp_cat_cls, [bsize, bsize, bsize],dim=0)
+            split_box_out = torch.split(tmp_cat_box, [bsize, bsize, bsize],dim=0)
+            for i in range(3):
+                class_out[i].append(split_cls_out[i])
+                box_out[i].append(split_box_out[i])
+        output_all = []
+        for i in range(3):
+            loss, class_loss, box_loss = self.loss_fn(class_out[i], box_out[i], cls_targets, box_targets, num_positives)
+            output = {'loss': loss, 'class_loss': class_loss, 'box_loss': box_loss}
+            output_all.append(output)
+        return output_all

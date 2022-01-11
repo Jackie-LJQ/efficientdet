@@ -1,5 +1,5 @@
 from .efficientdet import EfficientDet, HeadNet
-from .bench import DetBenchTrain, DetBenchPredict
+from .bench import DetBenchTrain, DetBenchPredict, DetBenchAdvTrain
 from .config import get_efficientdet_config
 from .helpers import load_pretrained, load_checkpoint
 
@@ -52,4 +52,6 @@ def create_model_from_config(
         model = DetBenchTrain(model, create_labeler=labeler)
     elif bench_task == 'predict':
         model = DetBenchPredict(model)
+    elif bench_task == 'advtrain':
+        model = DetBenchAdvTrain(model, create_labeler=labeler)
     return model

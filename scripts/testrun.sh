@@ -10,7 +10,7 @@ srun --job-name testrun --ntasks=1 \
 python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
     train.py /nas/home/biaoye/liujiaqi/datasets/coco/ \
     --model advprop_efficientdet_d0 \
-    --batch-size 16 \
+    --batch-size 5 \
     --amp \
     --lr 0.12 \
     --warmup-epochs 5 \

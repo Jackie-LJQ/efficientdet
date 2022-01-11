@@ -4,7 +4,7 @@ srun --job-name loadbk --ntasks=1 \
 --partition ALL \
 --account rpixel \
 --qos premium \
---cpus-per-task=40 \
+--cpus-per-task=20 \
 --mem=1G --gres=gpu:$NUM_GPU \
 --time=72:00:00 \
 python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
@@ -20,8 +20,8 @@ python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
     --fill-color mean \
     --model-ema \
     --model-ema-decay 0.9999 \
-    --resume logs/pretrainbk/train/20220110-135823-pretrainBN_efficientdet_d0/last.pth.tar \
     --output logs/pretrainbk \
     --epochs 200
+    # --resume logs/pretrainbk/train/20220110-135823-pretrainBN_efficientdet_d0/last.pth.tar \
     # --no-pretrained-backbone \
 
