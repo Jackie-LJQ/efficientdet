@@ -35,6 +35,15 @@ class Coco2014Cfg(CocoCfg):
         test=dict(ann_filename='', img_dir='test2014', has_labels=False),
     ))
 
+@dataclass
+class CocoTestRunCfg(CocoCfg):
+    variant: str = 'TestRun'
+    splits: Dict[str, dict] = field(default_factory=lambda: dict(
+        train=dict(ann_filename='annotations/cocoTestRun.json', img_dir='train2017', has_labels=True),
+        val=dict(ann_filename='annotations/cocoTestRun.json', img_dir='train2017', has_labels=True),
+        test=dict(ann_filename='annotations/image_info_test2017.json', img_dir='test2017', has_labels=False),
+        testdev=dict(ann_filename='annotations/image_info_test-dev2017.json', img_dir='test2017', has_labels=False),
+    ))
 
 @dataclass
 class VocCfg:

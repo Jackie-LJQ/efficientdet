@@ -22,6 +22,8 @@ def create_dataset(name, root, splits=('train', 'val')):
     if name.startswith('coco'):
         if 'coco2014' in name:
             dataset_cfg = Coco2014Cfg()
+        elif 'cocotestrun' in name:
+            dataset_cfg = CocoTestRunCfg()
         else:
             dataset_cfg = Coco2017Cfg()
         for s in splits:
