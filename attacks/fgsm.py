@@ -29,7 +29,7 @@ class FGSM():
         self.targeted = targeted
        
 
-    def attack(self, model, x, gtlabels=None, targets=None, _lambda=None, idx2BN=None):
+    def attack(self, model, x, gtlabels=None, targets=None):
         '''
         Args:
             x: Tensor. Original images. size=(N,C,W,H)

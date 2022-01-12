@@ -6,7 +6,7 @@ import time
 from utils import get_clip_parameters
 import torch
 import logging
-
+from collections import OrderedDict
     
 def adv_train_epoch(
         epoch, model, loader, optimizer, args, 
@@ -18,7 +18,6 @@ def adv_train_epoch(
     losses_m = AverageMeter()
 
     attacker = AttackerBuilder(args.attacker)
-    # model.train()
     clip_params = get_clip_parameters(model, exclude_head='agc' in args.clip_mode)
     end = time.time()
     last_idx = len(loader) - 1
