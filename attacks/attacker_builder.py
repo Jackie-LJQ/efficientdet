@@ -3,7 +3,7 @@ from .fgsm import *
 __all__ = ["AttackerBuilder"]
 def AttackerBuilder(attacker_name='FGSM'):
     if attacker_name == "FGSM":
-        args = dict(eps=8/255, targeted=False)
+        args = dict(eps=1, targeted=True)
         # if attacker_cfg.get("cfg"):
         #     args.update(attacker_cfg["cfg"])
         attacker = FGSM(**args)

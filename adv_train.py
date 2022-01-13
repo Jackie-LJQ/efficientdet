@@ -22,16 +22,15 @@ def adv_train_epoch(
     end = time.time()
     last_idx = len(loader) - 1
     num_updates = epoch * len(loader)
+    _, attackTarget = next(iter(loader))
+    
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx
         data_time_m.update(time.time() - end)
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
         # generate adversarial images:
-        model.eval()
-        img_adv, adv_type = attacker.attack(model, input, target)
-                    
-        model.train()
+        img_adv, adv_type = attacker.attack(model=model, x=input, gtlabels=target, targets=attackTarget)
                        
         with amp_autocast():
             if adv_type == 'box':
