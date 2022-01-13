@@ -1,6 +1,6 @@
 from torch.autograd import Variable
 import torch
-
+from utils import set_advState
 
 def linf_clamp(x, _min, _max):
     '''
@@ -43,12 +43,12 @@ class FGSM():
         '''
         model.eval()
         x_adv = Variable(x.detach().cuda(), requires_grad=True)
-        dummy_x = torch.cat([x_adv, torch.zeros_like(x_adv), torch.zeros_like(x_adv)], dim=0)
         if self.targeted:
             # total_loss ccls_loss and box_loss of clean sample
-            total_loss, cls_loss, box_loss, _ = model(dummy_x, targets)[0].values()
+            output = model(x_adv, targets)
         else:
-            total_loss, cls_loss, box_loss, _ = model(dummy_x, gtlabels)[0].values()
+            output = model(x_adv, gtlabels)
+        cls_loss, box_loss = output["class_loss"], output["box_loss"]
         cls_grad_adv = torch.autograd.grad(cls_loss, x_adv, only_inputs=True, retain_graph=True)[0]
         box_grad_adv = torch.autograd.grad(box_loss, x_adv, only_inputs=True)[0]
         
@@ -60,14 +60,14 @@ class FGSM():
         x_box_adv = linf_clamp(x_box_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
         x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
         
-        cat_input = torch.cat([x, x_cls_adv, x_box_adv], dim=0)
         # total_loss of cls_adv sample and box_adv sample
-        cat_loss = model(cat_input, gtlabels)
-        cls_loss = cat_loss[1]['loss']
-        box_loss = cat_loss[2]['loss']  
+        set_advState(model, "cls_adv")
+        cls_loss = model(x_cls_adv, gtlabels)['loss']
+        set_advState(model, "box_adv")
+        box_loss = model(x_box_adv, gtlabels)['loss']
         
         model.train()      
-                
+        set_advState(model, "clean")
         if box_loss > cls_loss:
             return x_box_adv, 'box'
                 

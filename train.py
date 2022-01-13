@@ -44,7 +44,7 @@ from timm.models.layers import set_layer_config
 from timm.utils import *
 from timm.optim import create_optimizer
 from timm.scheduler import create_scheduler
-from adv_train import adv_train_epoch, adv_validate
+from adv_train import adv_train_epoch
 from utils import get_clip_parameters
 
 
@@ -279,13 +279,13 @@ def main():
     if args.train_type == 'normal':
         _train_epoch = train_epoch
         _validate = validate
-        bench_task = 'train'
+        # bench_task = 'train'
         if args.local_rank==0:
             logging.info('Using normal training.')
     elif args.train_type == 'advtrain':
         _train_epoch = adv_train_epoch
-        _validate = adv_validate
-        bench_task = 'advtrain'
+        _validate = validate
+        # bench_task = 'advtrain'
         if args.local_rank==0:
             logging.info('Using adversarial training.')
     else:
@@ -294,7 +294,7 @@ def main():
     with set_layer_config(scriptable=args.torchscript):
         model = create_model(
             args.model,
-            bench_task=bench_task,
+            bench_task='train',
             num_classes=args.num_classes,
             pretrained=args.pretrained,
             pretrained_backbone=args.pretrained_backbone,
