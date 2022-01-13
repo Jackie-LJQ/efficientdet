@@ -208,5 +208,15 @@ class DetBenchAdvTrain(nn.Module):
         for i in range(3):
             loss, class_loss, box_loss = self.loss_fn(class_out[i], box_out[i], cls_targets, box_targets, num_positives)
             output = {'loss': loss, 'class_loss': class_loss, 'box_loss': box_loss}
+            if not self.training and i==0:
+                # if eval mode, output detections for evaluation
+                class_out_pp, box_out_pp, indices, classes = _post_process(
+                    class_out[i], box_out[i], num_levels=self.num_levels, num_classes=self.num_classes,
+                    max_detection_points=self.max_detection_points)
+                output['detections'] = _batch_detection(
+                    bsize, class_out_pp, box_out_pp, self.anchors.boxes, indices, classes,
+                    target['img_scale'], target['img_size'],
+                    max_det_per_image=self.max_det_per_image, soft_nms=self.soft_nms)
             output_all.append(output)
+            
         return output_all

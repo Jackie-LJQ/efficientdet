@@ -2,6 +2,7 @@ from .efficientdet import EfficientDet, HeadNet
 from .bench import DetBenchTrain, DetBenchPredict, DetBenchAdvTrain
 from .config import get_efficientdet_config
 from .helpers import load_pretrained, load_checkpoint
+import torch
 
 
 def create_model(

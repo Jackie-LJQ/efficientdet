@@ -44,9 +44,9 @@ class FGSM():
         dummy_x = torch.cat([x_adv, torch.zeros_like(x_adv), torch.zeros_like(x_adv)], dim=0)
         if self.targeted:
             # total_loss ccls_loss and box_loss of clean sample
-            total_loss, cls_loss, box_loss = model(dummy_x, targets)[0].values()
+            total_loss, cls_loss, box_loss, _ = model(dummy_x, targets)[0].values()
         else:
-            total_loss, cls_loss, box_loss = model(dummy_x, gtlabels)[0].values()
+            total_loss, cls_loss, box_loss, _ = model(dummy_x, gtlabels)[0].values()
         cls_grad_adv = torch.autograd.grad(cls_loss, x_adv, only_inputs=True, retain_graph=True)[0]
         box_grad_adv = torch.autograd.grad(box_loss, x_adv, only_inputs=True)[0]
         

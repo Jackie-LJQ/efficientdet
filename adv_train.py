@@ -111,3 +111,47 @@ def adv_train_epoch(
 
     return OrderedDict([('loss', losses_m.avg)])
 
+def adv_validate(model, loader, args, evaluator=None, log_suffix=''):
+    batch_time_m = AverageMeter()
+    losses_m = AverageMeter()
+
+    model.eval()
+
+    end = time.time()
+    last_idx = len(loader) - 1
+    with torch.no_grad():
+        for batch_idx, (input, target) in enumerate(loader):
+            last_batch = batch_idx == last_idx
+            dummy_x = torch.cat([input, torch.zeros_like(input), torch.zeros_like(input)], dim=0)
+
+            output = model(dummy_x, target)
+            loss = output[0]['loss']
+
+            if evaluator is not None:
+                evaluator.add_predictions(output[0]['detections'], target)
+
+            if args.distributed:
+                reduced_loss = reduce_tensor(loss.data, args.world_size)
+            else:
+                reduced_loss = loss.data
+
+            torch.cuda.synchronize()
+
+            losses_m.update(reduced_loss.item(), input.size(0))
+
+            batch_time_m.update(time.time() - end)
+            end = time.time()
+            if args.local_rank == 0 and (last_batch or batch_idx % args.log_interval == 0):
+                log_name = 'Test' + log_suffix
+                logging.info(
+                    '{0}: [{1:>4d}/{2}]  '
+                    'Time: {batch_time.val:.3f} ({batch_time.avg:.3f})  '
+                    'Loss: {loss.val:>7.4f} ({loss.avg:>6.4f})  '.format(
+                        log_name, batch_idx, last_idx, batch_time=batch_time_m, loss=losses_m))
+
+    metrics = OrderedDict([('loss', losses_m.avg)])
+    if evaluator is not None:
+        metrics['map'] = evaluator.evaluate()
+
+    return metrics
+
