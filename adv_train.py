@@ -18,9 +18,10 @@ def adv_train_epoch(
     losses_m = AverageMeter()
 
     attacker = AttackerBuilder(args.attacker)
-    clip_params = get_clip_parameters(model, exclude_head='agc' in args.clip_mode)
-    end = time.time()
-    last_idx = len(loader) - 1
+    clip_params = get_clip_parameters(model, exclude_head='agc' in args.clip_mode) 
+    batch_size = args.batch_size * args.world_size
+    last_idx = len(loader) // batch_size * batch_size - 1
+    end = time.time()    
     num_updates = epoch * len(loader)
     _, attackTarget = next(iter(loader))
     
@@ -79,7 +80,7 @@ def adv_train_epoch(
                     'LR: {lr:.3e}  '
                     'Data: {data_time.val:.3f} ({data_time.avg:.3f})'.format(
                         epoch,
-                        batch_idx, len(loader),
+                        batch_idx, last_idx,
                         100. * batch_idx / last_idx,
                         loss=losses_m,
                         batch_time=batch_time_m,
@@ -101,7 +102,7 @@ def adv_train_epoch(
 
         if lr_scheduler is not None:
             lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
-
+        if last_batch: break
         end = time.time()
         # end for
 
