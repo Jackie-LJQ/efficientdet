@@ -20,7 +20,7 @@ from timm.models.layers import create_conv2d, create_pool2d, get_act_layer
 
 from .anchors import get_feat_sizes
 from .config import get_fpn_config, set_config_writeable, set_config_readonly
-from .object_detection import Triple_BN
+from .object_detection import Det_Dual_BN
 
 _DEBUG = False
 _USE_SCALE = False
@@ -29,8 +29,8 @@ _ACT_LAYER = get_act_layer('silu')
 def get_norm_layer(name):
     if name==None:
         return nn.BatchNorm2d
-    elif name=='Triple_BN':
-        return Triple_BN
+    elif name=='Det_Dual_BN':
+        return Det_Dual_BN
     else:
         assert False, 'norm_layer type %s not defined' % name
 

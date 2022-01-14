@@ -9,7 +9,6 @@ import torch.nn as nn
 
 from .anchors import Anchors, AnchorLabeler, generate_detections
 from .loss import DetectionLoss
-import numpy as np
 
 # try:
 #     torch.div(torch.ones(1), torch.ones(1), rounding_mode='floor')

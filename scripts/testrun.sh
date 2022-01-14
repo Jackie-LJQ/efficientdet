@@ -12,7 +12,7 @@ python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
     --model advprop_efficientdet_d0 \
     --dataset cocotestrun \
     --train-type advtrain \
-    --batch-size 4 \
+    --batch-size 2 \
     --amp \
     --lr 0.12 \
     --warmup-epochs 2 \
