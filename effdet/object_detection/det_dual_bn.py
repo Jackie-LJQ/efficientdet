@@ -7,10 +7,11 @@ class Det_Dual_BN(nn.Module):
         self.bn_adv = nn.BatchNorm2d(num_feature, eps, momentum)
     def forward(self, input):
         batch_size = input.shape[0] // 3
-        clean, adv = torch.split(input, [batch_size, 2*batch_size], dim=0)
+        clean, cls_adv, box_adv = torch.split(input, [batch_size, batch_size, batch_size], dim=0)
         clean_out = self.bn_clean(clean)
-        adv_out = self.bn_adv(adv)
-        output = torch.cat([clean_out, adv_out], dim=0)
+        cls_out = self.bn_adv(cls_adv)
+        box_out = self.bn_adv(box_adv)
+        output = torch.cat([clean_out, cls_out, box_out], dim=0)
         return output
     def __repr__(self):
         return "auxiliary_bn dual bn"

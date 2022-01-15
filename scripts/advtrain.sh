@@ -1,10 +1,10 @@
 #!/bin/bash
-NUM_GPU=4
+NUM_GPU=8
 srun --job-name advtrain --ntasks=1 \
 --partition ALL \
 --account rpixel \
 --qos premium \
---cpus-per-task=20 \
+--cpus-per-task=40 \
 --mem=1G --gres=gpu:$NUM_GPU \
 --time=72:00:00 \
 python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
@@ -26,5 +26,4 @@ python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
     --epochs 200 
     
     # --no-pretrained-backbone \
-
 
