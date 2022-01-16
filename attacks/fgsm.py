@@ -41,7 +41,7 @@ class FGSM():
         Return:
             x_adv: Tensor. Adversarial images. size=(N,C,W,H)
         '''
-        model.eval()
+        
         x_adv = Variable(x.detach().cuda(), requires_grad=True)
         if self.targeted:
             # total_loss ccls_loss and box_loss of clean sample
@@ -52,23 +52,22 @@ class FGSM():
         cls_grad_adv = torch.autograd.grad(cls_loss, x_adv, only_inputs=True, retain_graph=True)[0]
         box_grad_adv = torch.autograd.grad(box_loss, x_adv, only_inputs=True)[0]
         
-        x_cls_adv = x_adv.data.add_(self.alpha * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
-        x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
-        x_cls_adv = torch.clamp(x_cls_adv, 0, 1) # clamp to RGB range [0,1]
-        
-        x_box_adv = x_adv.data.add_(self.alpha * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
-        x_box_adv = linf_clamp(x_box_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
-        x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
-        
-        # total_loss of cls_adv sample and box_adv sample
-        set_advState(model, "cls_adv")
-        cls_loss = model(x_cls_adv, gtlabels)['loss']
-        set_advState(model, "box_adv")
-        box_loss = model(x_box_adv, gtlabels)['loss']
-        
-        model.train()      
-        set_advState(model, "clean")
-        if box_loss > cls_loss:
-            return x_box_adv, 'box'
+        with torch.no_grad():
+            x_cls_adv = x_adv.data.add_(self.alpha * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
+            x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
+            x_cls_adv = torch.clamp(x_cls_adv, 0, 1) # clamp to RGB range [0,1]
+            
+            x_box_adv = x_adv.data.add_(self.alpha * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
+            x_box_adv = linf_clamp(x_box_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
+            x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
+            
+            # total_loss of cls_adv sample and box_adv sample
+            set_advState(model, False)
+            cls_loss = model(x_cls_adv, gtlabels)['loss']
+            box_loss = model(x_box_adv, gtlabels)['loss']
                 
-        return x_cls_adv, 'cls'
+        # set_advState(model, "clean")
+        if box_loss > cls_loss:
+            return x_box_adv
+                
+        return x_cls_adv

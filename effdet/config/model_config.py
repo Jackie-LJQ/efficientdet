@@ -7,7 +7,6 @@ TODO use a different config system (OmegaConfig -> Hydra?), separate model from 
 
 from omegaconf import OmegaConf
 from copy import deepcopy
-from effdet.object_detection import Triple_BN
 
 def default_detection_model_configs():
     """Returns a default detection configs."""
@@ -121,7 +120,7 @@ efficientdet_model_param_dict = dict(
         pad_type='',
         redundant_bias=False,
         backbone_args=dict(drop_path_rate=0.1),
-        norm_layer='Triple_BN',
+        norm_layer='Det_Dual_BN',
         url='https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/efficientnet_b0_ra-3dd342df.pth',
     ),
     efficientdet_d1=dict(

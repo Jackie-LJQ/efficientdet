@@ -21,7 +21,8 @@ def adv_train_epoch(
     attacker = AttackerBuilder(args.attacker)
     clip_params = get_clip_parameters(model, exclude_head='agc' in args.clip_mode)
     end = time.time()
-    last_idx = len(loader) - 1
+    batch_size = args.batch_size * args.world_size
+    last_idx = len(loader) // batch_size * batch_size - 1
     num_updates = epoch * len(loader)
     _, attackTarget = next(iter(loader))
     
@@ -31,16 +32,13 @@ def adv_train_epoch(
         if args.channels_last:
             input = input.contiguous(memory_format=torch.channels_last)
         # generate adversarial images:
-        img_adv, adv_type = attacker.attack(model=model, x=input, gtlabels=target, targets=attackTarget)
-        clean_loss = model(input, target)["loss"]
+        model.eval()
+        img_adv = attacker.attack(model=model, x=input, gtlabels=target, targets=attackTarget)
+        model.train()
         with amp_autocast():
-            if adv_type == 'box':
-                set_advState(model, "box_adv")
-                adv_loss = model(img_adv, target)["loss"]
-            else:
-                set_advState(model, "cls_adv")
-                adv_loss = model(img_adv, target)["loss"]
-        set_advState(model, "clean")
+            adv_loss = model(img_adv, target)["loss"]
+        set_advState(model, True) # True for clean sample
+        clean_loss = model(input, target)["loss"]        
         loss = clean_loss + adv_loss
         if not args.distributed:
             losses_m.update(loss.item(), input.size(0))
@@ -103,6 +101,7 @@ def adv_train_epoch(
             lr_scheduler.step_update(num_updates=num_updates, metric=losses_m.avg)
 
         end = time.time()
+        if last_batch: break
         # end for
 
     if hasattr(optimizer, 'sync_lookahead'):

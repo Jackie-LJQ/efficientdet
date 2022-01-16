@@ -1,18 +1,18 @@
 #!/bin/bash
-NUM_GPU=1
+NUM_GPU=4
 srun --job-name testrun --ntasks=1 \
 --partition ALL \
 --account rpixel \
 --qos premium \
---cpus-per-task=4 \
+--cpus-per-task=40 \
 --mem=1G --gres=gpu:$NUM_GPU \
 --time=72:00:00 \
 python -m torch.distributed.launch --nproc_per_node=$NUM_GPU \
     train.py /nas/home/biaoye/liujiaqi/datasets/coco/ \
     --model advprop_efficientdet_d0 \
-    --dataset cocotestrun \
+    --dataset coco \
     --train-type advtrain \
-    --batch-size 4 \
+    --batch-size 8 \
     --amp \
     --lr 0.12 \
     --warmup-epochs 2 \

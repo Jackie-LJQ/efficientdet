@@ -1,4 +1,4 @@
-from effdet.object_detection import Triple_BN
+from effdet.object_detection import Det_Dual_BN
 def get_clip_parameters(model, exclude_head=False):
     if exclude_head:
         # FIXME this a bit of a quick and dirty hack to skip classifier head params
@@ -8,5 +8,5 @@ def get_clip_parameters(model, exclude_head=False):
 
 def set_advState(model, advState):
     for name, submodel in model.named_modules():
-        if isinstance(submodel, Triple_BN):
+        if isinstance(submodel, Det_Dual_BN):
             submodel.advState = advState
