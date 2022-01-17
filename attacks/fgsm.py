@@ -52,19 +52,20 @@ class FGSM():
         cls_grad_adv = torch.autograd.grad(cls_loss, x_adv, only_inputs=True, retain_graph=True)[0]
         box_grad_adv = torch.autograd.grad(box_loss, x_adv, only_inputs=True)[0]
         
-        x_cls_adv = x_adv.data.add_(self.alpha * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
-        x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
-        x_cls_adv = torch.clamp(x_cls_adv, 0, 1) # clamp to RGB range [0,1]
-        
-        x_box_adv = x_adv.data.add_(self.alpha * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
-        x_box_adv = linf_clamp(x_box_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
-        x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
-        
-        cat_input = torch.cat([x, x_cls_adv, x_box_adv], dim=0)
-        # total_loss of cls_adv sample and box_adv sample
-        cat_loss = model(cat_input, gtlabels)
-        cls_loss = cat_loss[1]['loss']
-        box_loss = cat_loss[2]['loss']  
+        with torch.no_grad():
+            x_cls_adv = x_adv.data.add_(self.alpha * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
+            x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
+            x_cls_adv = torch.clamp(x_cls_adv, 0, 1) # clamp to RGB range [0,1]
+            
+            x_box_adv = x_adv.data.add_(self.alpha * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
+            x_box_adv = linf_clamp(x_box_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
+            x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
+            
+            cat_input = torch.cat([x, x_cls_adv, x_box_adv], dim=0)
+            # total_loss of cls_adv sample and box_adv sample
+            cat_loss = model(cat_input, gtlabels)
+            cls_loss = cat_loss[1]['loss']
+            box_loss = cat_loss[2]['loss']  
         
         model.train()      
                 
