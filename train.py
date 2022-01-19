@@ -45,7 +45,7 @@ from timm.utils import *
 from timm.optim import create_optimizer
 from timm.scheduler import create_scheduler
 from adv_train import adv_train_epoch, adv_validate
-from utils import get_clip_parameters
+from utils import get_clip_parameters, convert_dual_bn
 
 
 torch.backends.cudnn.benchmark = True
@@ -306,6 +306,9 @@ def main():
             bench_labeler=args.bench_labeler,
             checkpoint_path=args.initial_checkpoint,
         )
+    if "adv_bkbone" in args.model:
+        model = convert_dual_bn(model)
+        
     model_config = model.config  # grab before we obscure with DP/DDP wrappers
 
     if args.local_rank == 0:
