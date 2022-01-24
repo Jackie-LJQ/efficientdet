@@ -10,7 +10,7 @@ from collections import OrderedDict
 from utils import set_advState
     
 def adv_train_epoch(
-        epoch, model, loader, optimizer, args, 
+        epoch, model, loader, optimizer, args, attackTarget,
         lr_scheduler=None, saver=None, output_dir='',  
         amp_autocast=suppress, loss_scaler=None, model_ema=None):
 
@@ -24,7 +24,7 @@ def adv_train_epoch(
     batch_size = args.batch_size * args.world_size
     last_idx = len(loader) // batch_size * batch_size - 1
     num_updates = epoch * len(loader)
-    _, attackTarget = next(iter(loader))
+    # _, attackTarget = next(iter(loader))
     
     for batch_idx, (input, target) in enumerate(loader):
         last_batch = batch_idx == last_idx

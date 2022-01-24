@@ -427,11 +427,12 @@ def main():
             f.write(args_text)
 
     try:
+        _, attackTarget = next(iter(loader_train))
         for epoch in range(start_epoch, num_epochs):
             if args.distributed:
                 loader_train.sampler.set_epoch(epoch)
             train_metrics = _train_epoch(
-                epoch, model, loader_train, optimizer, args,
+                epoch, model, loader_train, optimizer, args, attackTarget=attackTarget,
                 lr_scheduler=lr_scheduler, saver=saver, output_dir=output_dir,
                 amp_autocast=amp_autocast, loss_scaler=loss_scaler, model_ema=model_ema)
 
