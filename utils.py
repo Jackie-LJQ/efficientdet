@@ -22,15 +22,20 @@ def convert_dual_bn(model):
             with torch.no_grad():
                 model_output.bn_clean.weight = model.weight
                 model_output.bn_clean.bias = model.bias
-                model_output.bn_adv.weight = model.weight
-                model_output.bn_adv.bias = model.bias
+                model_output.bn_cls.weight = model.weight
+                model_output.bn_cls.bias = model.bias
+                model_output.bn_box.weight = model.weight
+                model_output.bn_box.bias = model.bias
                 
         model_output.bn_clean.running_mean = model.running_mean
         model_output.bn_clean.running_var = model.running_var
         model_output.bn_clean.num_batches_tracked = model.num_batches_tracked
-        model_output.bn_adv.running_mean = model.running_mean
-        model_output.bn_adv.running_var = model.running_var
-        model_output.bn_adv.num_batches_tracked = model.num_batches_tracked
+        model_output.bn_cls.running_mean = model.running_mean
+        model_output.bn_cls.running_var = model.running_var
+        model_output.bn_cls.num_batches_tracked = model.num_batches_tracked
+        model_output.bn_box.running_mean = model.running_mean
+        model_output.bn_box.running_var = model.running_var
+        model_output.bn_box.num_batches_tracked = model.num_batches_tracked
     
     for name, child in model.named_children():
         model_output.add_module(name, convert_dual_bn(child))

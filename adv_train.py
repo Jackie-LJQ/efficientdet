@@ -37,7 +37,7 @@ def adv_train_epoch(
         model.train()
         with amp_autocast():
             adv_loss = model(img_adv, target)["loss"]
-        set_advState(model, True) # True for clean sample
+        set_advState(model, 1) # True for clean sample
         clean_loss = model(input, target)["loss"]        
         loss = clean_loss + adv_loss
         if not args.distributed:
