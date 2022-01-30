@@ -229,7 +229,6 @@ def _parse_args():
 def main():
     setup_default_logging()
     args, args_text = _parse_args()
-
     args.pretrained_backbone = not args.no_pretrained_backbone
     args.prefetcher = not args.no_prefetcher
     args.distributed = False
@@ -240,9 +239,9 @@ def main():
     args.rank = 0  # global rank
     if args.distributed:
         args.rank = int(os.environ['SLURM_PROCID'])
+        args.local_rank = args.rank
         args.world_size = int(os.environ["WORLD_SIZE"])
         args.device = args.rank % torch.cuda.device_count()
-        # print(args.rank, args.world_size, args.device)
         torch.cuda.set_device(args.device)
         torch.distributed.init_process_group(backend='nccl', init_method='env://', world_size=args.world_size, rank=args.rank)
     assert args.rank >= 0
@@ -315,7 +314,7 @@ def main():
     if args.local_rank == 0:
         logging.info('Model %s created, param count: %d' % (args.model, sum([m.numel() for m in model.parameters()])))
 
-    model.cuda()
+    model.cuda(args.device)
     if args.channels_last:
         model = model.to(memory_format=torch.channels_last)
 
