@@ -19,7 +19,7 @@ def linf_clamp(x, _min, _max):
     return x
 
 class FGSM():
-    def __init__(self, eps, alpha=1, targeted=True):
+    def __init__(self, eps, alpha=1/255, targeted=True):
         '''
         Args:
             eps: float. noise bound.
@@ -53,12 +53,12 @@ class FGSM():
         box_grad_adv = torch.autograd.grad(box_loss, x_adv, only_inputs=True)[0]
         
         with torch.no_grad():
-            x_cls_adv = x_adv.data.add_(self.alpha * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
-            x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
+            x_cls_adv = x_adv.data.add_(self.eps * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
+            x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.alpha, _max=x+self.alpha) # clamp to linf ball centered by x
             x_cls_adv = torch.clamp(x_cls_adv, 0, 1) # clamp to RGB range [0,1]
             
-            x_box_adv = x_adv.data.add_(self.alpha * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
-            x_box_adv = linf_clamp(x_box_adv, _min=x-self.eps, _max=x+self.eps) # clamp to linf ball centered by x
+            x_box_adv = x_adv.data.add_(self.eps * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
+            x_box_adv = linf_clamp(x_box_adv, _min=x-self.alpha, _max=x+self.alpha) # clamp to linf ball centered by x
             x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
             
             # total_loss of cls_adv sample and box_adv sample
@@ -66,7 +66,6 @@ class FGSM():
             cls_loss = model(x_cls_adv, gtlabels)['loss']
             box_loss = model(x_box_adv, gtlabels)['loss']
                 
-        # set_advState(model, "clean")
         if box_loss > cls_loss:
             return x_box_adv
                 
