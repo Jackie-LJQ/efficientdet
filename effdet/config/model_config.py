@@ -135,6 +135,18 @@ efficientdet_model_param_dict = dict(
         backbone_args=dict(drop_path_rate=0.1),
         url='https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/efficientnet_b0_ra-3dd342df.pth',
     ),
+    adv_bkbone_efficientdet_d3=dict(
+        name='efficientdet_d3',
+        backbone_name='efficientnet_b3',
+        image_size=(896, 896),
+        fpn_channels=160,
+        fpn_cell_repeats=6,
+        box_class_repeats=4,
+        pad_type='',
+        redundant_bias=False,
+        backbone_args=dict(drop_path_rate=0.2),
+        url='https://github.com/rwightman/pytorch-image-models/releases/download/v0.1-weights/efficientnet_b3_ra-a5e2fbc7.pth',
+    ),
     efficientdet_d1=dict(
         name='efficientdet_d1',
         backbone_name='efficientnet_b1',

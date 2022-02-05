@@ -1,6 +1,7 @@
 from effdet.object_detection import Det_Dual_BN
 import torch.nn as nn
 import torch
+
 def get_clip_parameters(model, exclude_head=False):
     if exclude_head:
         # FIXME this a bit of a quick and dirty hack to skip classifier head params
@@ -37,3 +38,24 @@ def convert_dual_bn(model):
     
     del model
     return model_output
+
+def convert_model(state_dict, s):
+    new_state_dict = dict()
+    for k, v in state_dict.items():
+        if 'bn' in k:
+            if s in k:
+                newkey = k.replace(s, '')
+                new_state_dict[newkey]=v
+        else:
+            new_state_dict[k]=v
+    return new_state_dict
+
+
+def load_advckpt(model, checkpoint_path, s, use_ema):
+    state_dict = torch.load(checkpoint_path, map_location='cpu')
+    if use_ema:
+        state_dict=state_dict['state_dict_ema']
+    else:
+        state_dict=state_dict['state_dict']
+    state_dict=convert_model(state_dict, s)
+    model.load_state_dict(state_dict, strict=True)

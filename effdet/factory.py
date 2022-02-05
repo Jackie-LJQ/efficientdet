@@ -3,6 +3,7 @@ from .bench import DetBenchTrain, DetBenchPredict
 from .config import get_efficientdet_config
 from .helpers import load_pretrained, load_checkpoint
 import torch
+from utils import load_advckpt
 
 
 def create_model(
@@ -32,7 +33,7 @@ def create_model_from_config(
             setattr(config, ov, value)
 
     labeler = kwargs.pop('bench_labeler', False)
-
+    load_adv = kwargs.pop('load_adv', None)
     # create the base model
     model = EfficientDet(config, pretrained_backbone=pretrained_backbone, **kwargs)
 
@@ -45,8 +46,11 @@ def create_model_from_config(
         model.reset_head(num_classes=num_classes)
 
     # load an argument specified training checkpoint
-    if checkpoint_path:
-        load_checkpoint(model, checkpoint_path, use_ema=checkpoint_ema)
+    if checkpoint_path:        
+        if load_adv:
+            load_advckpt(model, checkpoint_path, load_adv, use_ema=checkpoint_ema)
+        else:
+            load_checkpoint(model, checkpoint_path, use_ema=checkpoint_ema)
 
     # wrap model in task specific training/prediction bench if set
     if bench_task == 'train':

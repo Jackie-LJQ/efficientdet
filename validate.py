@@ -91,6 +91,8 @@ parser.add_argument('--torchscript', dest='torchscript', action='store_true',
                     help='convert model torchscript for inference')
 parser.add_argument('--results', default='', type=str, metavar='FILENAME',
                     help='JSON filename for evaluation results')
+parser.add_argument('--load-adv', default=None, type=str, help='use bn_clean. when \
+    load clean_bn, use bn_adv. when load adv_bn')
 
 
 def validate(args):
@@ -110,6 +112,8 @@ def validate(args):
         extra_args = {}
         if args.img_size is not None:
             extra_args = dict(image_size=(args.img_size, args.img_size))
+        if args.load_adv is not None:
+            extra_args['load_adv']=args.load_adv
         bench = create_model(
             args.model,
             bench_task='predict',

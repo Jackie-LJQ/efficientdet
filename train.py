@@ -280,14 +280,10 @@ def main():
 
     if args.train_type == 'normal':
         _train_epoch = train_epoch
-        _validate = validate
-        # bench_task = 'train'
         if args.local_rank==0:
             logging.info('Using normal training.')
     elif args.train_type == 'advtrain':
         _train_epoch = adv_train_epoch
-        _validate = validate
-        # bench_task = 'advtrain'
         if args.local_rank==0:
             logging.info('Using adversarial training.')
     else:
@@ -448,9 +444,9 @@ def main():
                 if args.distributed and args.dist_bn in ('broadcast', 'reduce'):
                     distribute_bn(model_ema, args.world_size, args.dist_bn == 'reduce')
 
-                eval_metrics = _validate(model_ema.module, loader_eval, args, evaluator, log_suffix=' (EMA)')
+                eval_metrics = validate(model_ema.module, loader_eval, args, evaluator, log_suffix=' (EMA)')
             else:
-                eval_metrics = _validate(model, loader_eval, args, evaluator)
+                eval_metrics = validate(model, loader_eval, args, evaluator)
 
             if lr_scheduler is not None:
                 # step LR for next epoch
