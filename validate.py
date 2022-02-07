@@ -8,12 +8,15 @@ import time
 import torch
 import torch.nn.parallel
 from contextlib import suppress
+from effdet.anchors import Anchors, AnchorLabeler
 
 from effdet import create_model, create_evaluator, create_dataset, create_loader
 from effdet.data import resolve_input_config
 from timm.utils import AverageMeter, setup_default_logging
 from timm.models.layers import set_layer_config
-
+from attacks import AttackerBuilder
+from torchvision.utils import save_image
+import os
 has_apex = False
 try:
     from apex import amp
@@ -93,7 +96,8 @@ parser.add_argument('--results', default='', type=str, metavar='FILENAME',
                     help='JSON filename for evaluation results')
 parser.add_argument('--load-adv', default=None, type=str, help='use bn_clean. when \
     load clean_bn, use bn_adv. when load adv_bn')
-
+parser.add_argument('--attacker', default=None, type=str, help='make adversarial sample')
+parser.add_argument('--visualize', default=0, type=int, help='number of images batch to visualize')
 
 def validate(args):
     setup_default_logging()
@@ -114,9 +118,14 @@ def validate(args):
             extra_args = dict(image_size=(args.img_size, args.img_size))
         if args.load_adv is not None:
             extra_args['load_adv']=args.load_adv
+        if args.attacker:
+            bench_task='train'
+        else:
+            bench_task='predict'
+
         bench = create_model(
             args.model,
-            bench_task='predict',
+            bench_task=bench_task,
             num_classes=args.num_classes,
             pretrained=args.pretrained,
             redundant_bias=args.redundant_bias,
@@ -147,6 +156,13 @@ def validate(args):
 
     dataset = create_dataset(args.dataset, args.root, args.split)
     input_config = resolve_input_config(args, model_config)
+
+    if args.attacker:
+        anchor_labeler=AnchorLabeler(
+        Anchors.from_config(model_config), model_config.num_classes, match_threshold=0.5)
+    else:
+        anchor_labeler=None
+
     loader = create_loader(
         dataset,
         input_size=input_config['input_size'],
@@ -157,18 +173,30 @@ def validate(args):
         mean=input_config['mean'],
         std=input_config['std'],
         num_workers=args.workers,
-        pin_mem=args.pin_mem)
+        pin_mem=args.pin_mem,
+        anchor_labeler=anchor_labeler)
 
     evaluator = create_evaluator(args.dataset, dataset, pred_yxyx=False)
     bench.eval()
     batch_time = AverageMeter()
     end = time.time()
     last_idx = len(loader) - 1
-    with torch.no_grad():
-        for i, (input, target) in enumerate(loader):
+    
+    if args.attacker:
+        attacker = AttackerBuilder(args.attacker)
+        _, attackTarget = next(iter(loader))
+
+    for i, (input, target) in enumerate(loader):
+        if args.attacker:
+            input = attacker.attack(model=bench, x=input, gtlabels=target, targets=attackTarget)
+            save_image(input, "visualize/ori_img%d.png" % i)
+            if i<args.visualize:
+                os.makedirs('visualize', exist_ok=True)
+                save_image(input, "visualize/adv_img%d.png" % i)
+        with torch.no_grad():
             with amp_autocast():
-                output = bench(input, img_info=target)
-            evaluator.add_predictions(output, target)
+                output = bench(input, target)
+            evaluator.add_predictions(output['detections'], target)
 
             # measure elapsed time
             batch_time.update(time.time() - end)

@@ -543,7 +543,7 @@ def create_datasets_and_loaders(
 
 
 def train_epoch(
-        epoch, model, loader, optimizer, args,
+        epoch, model, loader, optimizer, args, attackTarget, 
         lr_scheduler=None, saver=None, output_dir='', amp_autocast=suppress, loss_scaler=None, model_ema=None):
 
     batch_time_m = AverageMeter()
