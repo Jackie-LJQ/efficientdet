@@ -137,3 +137,5 @@ dmypy.json
 *.gz
 logs/
 dataset/
+visualize/
+*.out

@@ -188,10 +188,11 @@ def validate(args):
 
     for i, (input, target) in enumerate(loader):
         if args.attacker:
-            input = attacker.attack(model=bench, x=input, gtlabels=target, targets=attackTarget)
-            save_image(input, "visualize/ori_img%d.png" % i)
             if i<args.visualize:
                 os.makedirs('visualize', exist_ok=True)
+                save_image(input, "visualize/ori_img%d.png" % i)
+            input = attacker.attack(model=bench, x=input, gtlabels=target, targets=attackTarget)            
+            if i<args.visualize:
                 save_image(input, "visualize/adv_img%d.png" % i)
         with torch.no_grad():
             with amp_autocast():
