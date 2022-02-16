@@ -242,7 +242,8 @@ def validate(args):
                     
     P = results[0,0,:]
     # benchmark val
-    mPC = np.mean(results[:15,1:,:], axis=(0,1))
+    numCorp=len(corruptions)
+    mPC = np.mean(results[:numCorp,1:,:], axis=(0,1))
     rPC = mPC/P
     print("Performance on Clean Data [P] (box)")
     print_coco_results(P)
