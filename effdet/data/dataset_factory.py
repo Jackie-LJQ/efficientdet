@@ -12,7 +12,8 @@ from .dataset import DetectionDatset
 from .parsers import create_parser
 
 
-def create_dataset(name, root, splits=('train', 'val')):
+def create_dataset(name, root, splits=('train', 'val'), \
+    corruption=None, severity=None):
     if isinstance(splits, str):
         splits = (splits,)
     name = name.lower()
@@ -24,6 +25,10 @@ def create_dataset(name, root, splits=('train', 'val')):
             dataset_cfg = Coco2014Cfg()
         elif 'cocotestrun' in name:
             dataset_cfg = CocoTestRunCfg()
+        elif 'cococ' in name:
+            dataset_cfg = CocoC_Cfg()
+            assert corruption!=None, "No corruption for CocoC"
+            assert severity!=None, "No corruption severity for CocoC"
         else:
             dataset_cfg = Coco2017Cfg()
         for s in splits:
@@ -38,6 +43,8 @@ def create_dataset(name, root, splits=('train', 'val')):
             datasets[s] = dataset_cls(
                 data_dir=root / Path(split_cfg['img_dir']),
                 parser=create_parser(dataset_cfg.parser, cfg=parser_cfg),
+                corruption=corruption,
+                corruption_severity=severity
             )
     elif name.startswith('voc'):
         if 'voc0712' in name:

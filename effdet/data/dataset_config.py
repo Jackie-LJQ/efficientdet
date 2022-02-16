@@ -34,6 +34,13 @@ class Coco2014Cfg(CocoCfg):
         val=dict(ann_filename='annotations/instances_val2014.json', img_dir='val2014', has_labels=True),
         test=dict(ann_filename='', img_dir='test2014', has_labels=False),
     ))
+    
+@dataclass
+class CocoC_Cfg(CocoCfg):
+    variant: str = '2017'
+    splits: Dict[str, dict] = field(default_factory=lambda: dict(
+        val=dict(ann_filename='annotations/instances_val2017.json', img_dir='val2017', has_labels=True)
+    ))
 
 @dataclass
 class CocoTestRunCfg(CocoCfg):
@@ -186,3 +193,4 @@ class OpenImagesSegChallenge2019Cfg(OpenImagesSegCfg):
         val=dict(),
         test=dict()
     ))
+
