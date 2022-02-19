@@ -53,13 +53,13 @@ class FGSM():
         box_grad_adv = torch.autograd.grad(box_loss, x_adv, only_inputs=True)[0]
         
         with torch.no_grad():
-            x_cls_adv = x_adv.data.add_(self.eps * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
+            x_cls_adv = x_adv.data.sub_(self.eps * torch.sign(cls_grad_adv.data)) # gradient assend by Sign-SGD
             x_cls_adv = linf_clamp(x_cls_adv, _min=x-self.alpha, _max=x+self.alpha) # clamp to linf ball centered by x
-            x_cls_adv = torch.clamp(x_cls_adv, 0, 1) # clamp to RGB range [0,1]
+            x_cls_adv = torch.clamp(x_cls_adv, -1, 1) # clamp to RGB range [0,1]
             
-            x_box_adv = x_adv.data.add_(self.eps * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
+            x_box_adv = x_adv.data.sub_(self.eps * torch.sign(box_grad_adv.data)) # gradient assend by Sign-SGD
             x_box_adv = linf_clamp(x_box_adv, _min=x-self.alpha, _max=x+self.alpha) # clamp to linf ball centered by x
-            x_box_adv = torch.clamp(x_box_adv, 0, 1) # clamp to RGB range [0,1]
+            x_box_adv = torch.clamp(x_box_adv, -1, 1) # clamp to RGB range [0,1]
             
             # total_loss of cls_adv sample and box_adv sample
             set_advState(model, False)
