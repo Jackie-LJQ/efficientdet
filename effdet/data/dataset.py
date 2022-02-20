@@ -7,6 +7,7 @@ import numpy as np
 
 from PIL import Image
 from .parsers import create_parser
+from imagecorruptions import corrupt
 
 
 class DetectionDatset(data.Dataset):
@@ -18,7 +19,8 @@ class DetectionDatset(data.Dataset):
 
     """
 
-    def __init__(self, data_dir, parser=None, parser_kwargs=None, transform=None):
+    def __init__(self, data_dir, parser=None, parser_kwargs=None, \
+        transform=None, corruption=None, corruption_severity=None):
         super(DetectionDatset, self).__init__()
         parser_kwargs = parser_kwargs or {}
         self.data_dir = data_dir
@@ -28,6 +30,8 @@ class DetectionDatset(data.Dataset):
             assert parser is not None and len(parser.img_ids)
             self._parser = parser
         self._transform = transform
+        self.corruption_severity=corruption_severity
+        self.corruption=corruption
 
     def __getitem__(self, index):
         """
@@ -44,9 +48,13 @@ class DetectionDatset(data.Dataset):
 
         img_path = self.data_dir / img_info['file_name']
         img = Image.open(img_path).convert('RGB')
+        if self.corruption and self.corruption!='None':
+            img = np.array(img)
+            img=corrupt(img, severity=self.corruption_severity, corruption_name=self.corruption)
+            img=Image.fromarray(img)
         if self.transform is not None:
             img, target = self.transform(img, target)
-
+        
         return img, target
 
     def __len__(self):

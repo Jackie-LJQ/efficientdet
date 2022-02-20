@@ -52,6 +52,7 @@ def convert_model(state_dict, s):
 
 
 def load_advckpt(model, checkpoint_path, s, use_ema):
+    print("Load checkpoint from: ", checkpoint_path)
     state_dict = torch.load(checkpoint_path, map_location='cpu')
     if use_ema:
         state_dict=state_dict['state_dict_ema']
@@ -59,3 +60,14 @@ def load_advckpt(model, checkpoint_path, s, use_ema):
         state_dict=state_dict['state_dict']
     state_dict=convert_model(state_dict, s)
     model.load_state_dict(state_dict, strict=True)
+    
+    
+def print_coco_results(results):
+    
+    def _print(result, ap=1, iouThr=None, areaRng='all', maxDets=100 ):
+        iStr = ' {:<18} {} @[ IoU={:<9} | area={:>6s} | maxDets={:>3d} ] = {:0.3f}'
+        titleStr = 'Average Precision' if ap == 1 else 'Average Recall'
+        typeStr = '(AP)' if ap==1 else '(AR)'
+        iouStr = '{:0.2f}:{:0.2f}'.format(.5, .95) \
+            if iouThr is None else '{:0.2f}'.format(iouThr)
+        print(iStr.format(titleStr, typeStr, iouStr, areaRng, maxDets, result))
